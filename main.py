@@ -68,6 +68,7 @@ def go_to_application_out(driver):
         EC.visibility_of_element_located((By.CLASS_NAME, 'el-input__inner')))
 
 
+
 def go_to_application_in(driver):
     driver.get('https://portal.pku.edu.cn/portal2017/#/bizCenter')
     WebDriverWait(driver, TIMEOUT).until(
@@ -206,10 +207,20 @@ def fill_in(driver, campus, reason, habitation, district, street):
     submit(driver)
 
     print('入校备案填报完毕！')
-
+    
+def wechat_notification(userName, sckey):
+    with request.urlopen(
+            quote('https://sc.ftqq.com/' + sckey + '.send?text=成功报备&desp=学号' +
+                  str(userName) + '成功报备',
+                  safe='/:?=&')) as response:
+        response = json.loads(response.read().decode('utf-8'))
+    if response['errmsg'] == 'success':
+        print('微信通知成功！')
+    else:
+        print(str(response['errno']) + ' error: ' + response['errmsg'])
 
 def run(driver, username, password, campus, reason, destination, track,
-        habitation, district, street):
+        habitation, district, street,sckey):
     login(driver, username, password)
     print('=================================')
 
@@ -221,6 +232,10 @@ def run(driver, username, password, campus, reason, destination, track,
     fill_in(driver, campus, reason, habitation, district, street)
 
     print('=================================')
+    
+    wechat_notification(username, sckey)
+    print('=================================')
+    
     print('可以愉快的玩耍啦！')
 
 
@@ -235,6 +250,7 @@ if __name__ == '__main__':
     parser.add_argument('--habitation', type=str, help='入校前居住地, eg. 北京', default='北京')
     parser.add_argument('--district', type=str, help='入校前居住所在区, eg. 海淀区', default='海淀区')
     parser.add_argument('--street', type=str, help='入校前居住所在街道, eg. 燕园街道', default='万柳街道')
+    parser.add_argument('--sckey',type=str,help='wechat sckey')
     args = parser.parse_args()
 
     args_public = copy.deepcopy(args)
@@ -256,6 +272,6 @@ if __name__ == '__main__':
 
     run(driver, args.username, args.password, args.campus, args.reason,
         args.destination, args.track, args.habitation, args.district,
-        args.street)
+        args.street,args.sckey)
 
     driver.close()
