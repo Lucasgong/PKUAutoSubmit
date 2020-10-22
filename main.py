@@ -7,6 +7,9 @@ from selenium.webdriver import Firefox, Chrome, PhantomJS
 from selenium import webdriver
 from argparse import ArgumentParser
 from urllib.parse import quote
+from urllib import request
+import json
+
 import time
 import copy
 import sys
@@ -250,7 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--habitation', type=str, help='入校前居住地, eg. 北京', default='北京')
     parser.add_argument('--district', type=str, help='入校前居住所在区, eg. 海淀区', default='海淀区')
     parser.add_argument('--street', type=str, help='入校前居住所在街道, eg. 燕园街道', default='万柳街道')
-    parser.add_argument('--sckey',type=str,help='wechat sckey')
+    parser.add_argument('--sckey', '-s', type=str, help='wechat sckey')
     args = parser.parse_args()
 
     args_public = copy.deepcopy(args)
