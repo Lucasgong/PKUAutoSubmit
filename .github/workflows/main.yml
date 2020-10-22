@@ -32,4 +32,4 @@ jobs:
       
       - run: |
           pip install selenium
-          python main.py -u ${{ secrets.USERNAME }} -p ${{ secrets.PASSWORD }} --sckey $${{secrets.SCKEY}}
+          python main.py -u ${{ secrets.USERNAME }} -p ${{ secrets.PASSWORD }} -s $${{secrets.SCKEY}}
