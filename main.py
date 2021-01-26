@@ -149,18 +149,24 @@ def write_track(driver, track):
         f'{track}')
     time.sleep(TIMESLP)
 
+
 def select_apartment(driver, apartment):
     driver.find_elements_by_class_name('el-select')[7].click()
     time.sleep(TIMESLP)
     driver.find_element_by_xpath(
         f'/html/body/div[9]/div[1]/div[1]/ul/li/span[text()="万柳园区"]').click()
 
+    driver.find_elements_by_class_name('el-input__inner')[12].clear()
     driver.find_elements_by_class_name('el-input__inner')[12].send_keys(
         '1区')
+
     time.sleep(TIMESLP)
+
+    driver.find_elements_by_class_name('el-input__inner')[13].clear()
     driver.find_elements_by_class_name('el-input__inner')[13].send_keys(
         '204c')
     time.sleep(TIMESLP)
+
 
 def click_check(driver):
     driver.find_element_by_class_name('el-checkbox__label').click()
@@ -213,7 +219,7 @@ def fill_out(driver, from_loc, end_loc, destination, reason, street, track):
     print('填写出校街道', end='')
     write_track(driver, track)
     print('Done')
-    
+
     print('填写宿舍', end='')
     select_apartment(driver, '')
     print('Done')
@@ -287,8 +293,8 @@ def run(driver, username, password, from_loc, end_loc, destination, reason, stre
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--username', '-u', type=str, help='用户名',default='1')
-    parser.add_argument('--password', '-p', type=str, help='密码',default='1')
+    parser.add_argument('--username', '-u', type=str, help='用户名', default='1')
+    parser.add_argument('--password', '-p', type=str, help='密码', default='1')
     parser.add_argument('--campus', type=str,
                         help='出发点, 燕园、万柳、畅春园、圆明园、中关新园', default='燕园')
     parser.add_argument('--reason', type=str,
@@ -303,7 +309,8 @@ if __name__ == '__main__':
                         help='入校前居住所在区, eg. 海淀区', default='海淀区')
     parser.add_argument('--street', type=str,
                         help='入校前居住所在街道, eg. 燕园街道', default='万柳街道')
-    parser.add_argument('--sckey', '-s', type=str, help='wechat sckey',default='0')
+    parser.add_argument('--sckey', '-s', type=str,
+                        help='wechat sckey', default='0')
     args = parser.parse_args()
 
     args_public = copy.deepcopy(args)
@@ -323,6 +330,6 @@ if __name__ == '__main__':
 
     driver = PhantomJS(executable_path=phantomjs_path)
     run(driver, args.username, args.password, '万柳园区', '校外',
-        '就业', '清华科技园 实习', '中关村东路1号院清华科技园', '万柳-中关村东路1号院清华科技园-万柳',args.sckey)
+        '就业', '清华科技园 实习', '中关村东路1号院清华科技园', '万柳-中关村东路1号院清华科技园-万柳', args.sckey)
 
     driver.close()
