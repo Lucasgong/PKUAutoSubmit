@@ -329,7 +329,7 @@ if __name__ == '__main__':
         phantomjs_path = os.path.join('phantomjs', 'phantomjs-windows.exe')
 
     driver = PhantomJS(executable_path=phantomjs_path)
-    #run(driver, args.username, args.password, '万柳园区', '校外',
+    run(driver, args.username, args.password, '万柳园区', '校外',
         '就业', '清华科技园 实习', '中关村东路1号院清华科技园', '万柳-中关村东路1号院清华科技园-万柳', args.sckey)
 
     driver.close()
