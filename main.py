@@ -14,6 +14,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
+#from webdriver_manager.chrome import ChromeDriverManager
+
 TIMEOUT = 20
 TIMESLP = 3
 
@@ -103,11 +105,18 @@ def select_in_end(driver, campus):
         f'/html/body/div[3]/div[1]/div[1]/ul/li/span[text()="{campus}"]').click()
 
 
-def select_destination(driver, destination):
+def select_in_gate(driver, gate):
     driver.find_elements_by_class_name('el-select')[2].click()
     time.sleep(TIMESLP)
     driver.find_element_by_xpath(
-        f'/html/body/div[4]/div[1]/div[1]/ul/li/span[text()="{destination}"]').click()
+        f'/html/body/div[4]/div[1]/div[1]/ul/ul[1]/li[2]/ul/li/span[text()="{gate}"]').click()
+
+
+def select_destination(driver, destination):
+    driver.find_elements_by_class_name('el-select')[3].click()
+    time.sleep(TIMESLP)
+    driver.find_element_by_xpath(
+        f'/html/body/div[5]/div[1]/div[1]/ul/li/span[text()="{destination}"]').click()
 
 
 def write_reason(driver, reason):
@@ -189,7 +198,7 @@ def submit(driver):
     time.sleep(TIMESLP)
 
 
-def fill_out(driver, from_loc, end_loc, destination, reason, street, track):
+def fill_out(driver, from_loc, end_loc, gate, destination, reason, track):
     print('开始填报出校备案')
 
     print('选择出入校起点', end='')
@@ -200,6 +209,10 @@ def fill_out(driver, from_loc, end_loc, destination, reason, street, track):
     select_in_end(driver, end_loc)
     print('Done')
 
+    print('选择出入校校门', end='')
+    select_in_gate(driver, gate)
+    print('Done')
+
     print('选择出入校事由', end='')
     select_destination(driver, destination)
     print('Done')
@@ -208,20 +221,20 @@ def fill_out(driver, from_loc, end_loc, destination, reason, street, track):
     write_reason(driver, reason)
     print('Done')
 
-    print('选择出校目的地', end='')
-    select_location(driver, '')
-    print('Done')
+    # print('选择出校目的地', end='')
+    # select_location(driver, '')
+    # print('Done')
 
-    print('填写出校街道', end='')
-    write_street(driver, street)
-    print('Done')
+    # print('填写出校街道', end='')
+    # write_street(driver, street)
+    # print('Done')
 
-    print('填写出校街道', end='')
+    print('填写出校轨迹', end='')
     write_track(driver, track)
     print('Done')
 
     print('填写宿舍', end='')
-    select_apartment(driver, '')
+    #select_apartment(driver, '')
     print('Done')
 
     click_check(driver)
@@ -271,12 +284,13 @@ def wechat_notification(userName, sckey):
         print(str(response['errno']) + ' error: ' + response['errmsg'])
 
 
-def run(driver, username, password, from_loc, end_loc, destination, reason, street, track, sckey):
+def run(driver, username, password, from_loc, end_loc, gate, destination, reason, track, sckey):
+
     login(driver, username, password)
     print('=================================')
 
     go_to_application_out(driver)
-    fill_out(driver, from_loc, end_loc, destination, reason, street, track)
+    fill_out(driver, from_loc, end_loc, gate, destination, reason, track)
     print('=================================')
 
     # go_to_application_in(driver)
@@ -329,7 +343,7 @@ if __name__ == '__main__':
         phantomjs_path = os.path.join('phantomjs', 'phantomjs-windows.exe')
 
     driver = PhantomJS(executable_path=phantomjs_path)
-    #run(driver, args.username, args.password, '万柳园区', '校外',
-        '就业', '清华科技园 实习', '中关村东路1号院清华科技园', '万柳-中关村东路1号院清华科技园-万柳', args.sckey)
+    run(driver, args.username, args.password, '万柳园区', '燕园',
+        '东南门', '学业', '校园上课 自习 科研', '万柳-燕园-万柳', args.sckey)
 
     driver.close()
