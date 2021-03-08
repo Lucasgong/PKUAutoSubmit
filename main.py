@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import time
+import warnings
 from argparse import ArgumentParser
 from urllib import request
 from urllib.parse import quote
@@ -15,65 +16,63 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 #from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium import webdriver
-from urllib.parse import quote
-from urllib import request
-import time
-import warnings
-import json
+
 warnings.filterwarnings('ignore')
 
+TIMEOUT = 20
+TIMESLP = 3
 
-def login(driver, userName, password, retry=0):
-    if retry == 3:
+def login(driver, username, password, failed=0):
+    if failed == 3:
         raise Exception('门户登录失败')
 
-    print('门户登陆中...')
-
-    appID = 'portal2017'
     iaaaUrl = 'https://iaaa.pku.edu.cn/iaaa/oauth.jsp'
     appName = quote('北京大学校内信息门户新版')
     redirectUrl = 'https://portal.pku.edu.cn/portal2017/ssoLogin.do'
-
     driver.get('https://portal.pku.edu.cn/portal2017/')
     driver.get(
-        f'{iaaaUrl}?appID={appID}&appName={appName}&redirectUrl={redirectUrl}')
-    WebDriverWait(driver, 5).until(
-        EC.visibility_of_element_located((By.ID, 'logon_button')))
-    driver.find_element_by_id('user_name').send_keys(userName)
-    time.sleep(0.1)
+        f'{iaaaUrl}?appID=portal2017&appName={appName}&redirectUrl={redirectUrl}'
+    )
+
+    print('门户登陆中...')
+    driver.find_element_by_id('user_name').send_keys(username)
+    time.sleep(TIMESLP)
     driver.find_element_by_id('password').send_keys(password)
-    time.sleep(0.1)
+    time.sleep(TIMESLP)
     driver.find_element_by_id('logon_button').click()
+
     try:
-        WebDriverWait(driver,
-                      5).until(EC.visibility_of_element_located((By.ID, 'all')))
-        print('门户登录成功！')
+        WebDriverWait(driver, TIMEOUT).until(
+            EC.visibility_of_element_located((By.LINK_TEXT, '我知道了')))
     except:
-        print('Retrying...')
-        login(driver, userName, password, retry + 1)
+        pass
+    else:
+        driver.find_element_by_link_text('我知道了').click()
+
+    try:
+        WebDriverWait(driver, TIMEOUT).until(
+            EC.visibility_of_element_located((By.ID, 'all')))
+    except:
+        login(driver, username, password, failed + 1)
+    else:
+        print('门户登录成功！')
 
 
 def go_to_simso(driver):
     driver.find_element_by_id('all').click()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located((By.ID, 'tag_s_stuCampusExEnReq')))
     driver.find_element_by_id('tag_s_stuCampusExEnReq').click()
-    time.sleep(1)
+    time.sleep(TIMESLP)
     driver.switch_to.window(driver.window_handles[-1])
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
 
 
 def go_to_application_out(driver):
     go_to_simso(driver)
     driver.find_element_by_class_name('el-card__body').click()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located((By.CLASS_NAME, 'el-select')))
 
 
@@ -81,24 +80,24 @@ def go_to_application_in(driver, userName, password):
     driver.back()
     driver.back()
     try:
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, TIMEOUT).until(
             EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
         time.sleep(0.5)
         driver.find_element_by_class_name('el-card__body').click()
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, TIMEOUT).until(
             EC.visibility_of_element_located((By.CLASS_NAME, 'el-select')))
     except:
         print('检测到会话失效，重新登陆中...')
         login(driver, userName, password)
         go_to_simso(driver)
         driver.find_element_by_class_name('el-card__body').click()
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, TIMEOUT).until(
             EC.visibility_of_element_located((By.CLASS_NAME, 'el-select')))
 
 
 def select_in_out(driver, way):
     driver.find_element_by_class_name('el-select').click()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located(
             (By.XPATH, f'//li/span[text()="{way}"]')))
     driver.find_element_by_xpath(f'//li/span[text()="{way}"]').click()
@@ -106,7 +105,7 @@ def select_in_out(driver, way):
 
 def select_campus(driver, campus):
     driver.find_elements_by_class_name('el-select')[1].click()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located(
             (By.XPATH, f'//li/span[text()="{campus}"]')))
     driver.find_element_by_xpath(f'//li/span[text()="{campus}"]').click()
@@ -114,7 +113,7 @@ def select_campus(driver, campus):
 
 def select_destination(driver, destination):
     driver.find_elements_by_class_name('el-select')[2].click()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located(
             (By.XPATH, f'//li/span[text()="{destination}"]')))
     driver.find_element_by_xpath(f'//li/span[text()="{destination}"]').click()
@@ -122,7 +121,7 @@ def select_destination(driver, destination):
 
 def select_district(driver, district):
     driver.find_elements_by_class_name('el-select')[3].click()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located(
             (By.XPATH, f'//li/span[text()="{district}"]')))
     driver.find_element_by_xpath(f'//li/span[text()="{district}"]').click()
@@ -131,39 +130,39 @@ def select_district(driver, district):
 def write_reason(driver, reason):
     driver.find_element_by_class_name('el-textarea__inner').send_keys(
         f'{reason}')
-    time.sleep(0.1)
+    time.sleep(TIMESLP)
 
 
 def write_track(driver, track):
     driver.find_elements_by_class_name('el-textarea__inner')[1].send_keys(
         f'{track}')
-    time.sleep(0.1)
+    time.sleep(TIMESLP)
 
 
 def write_street(driver, street):
     driver.find_elements_by_class_name('el-textarea__inner')[1].send_keys(
         f'{street}')
-    time.sleep(0.1)
+    time.sleep(TIMESLP)
 
 
 def click_check(driver):
     driver.find_element_by_class_name('el-checkbox__label').click()
-    time.sleep(0.1)
+    time.sleep(TIMESLP)
 
 
 def click_inPeking(driver):
     driver.find_element_by_class_name('el-radio__inner').click()
-    time.sleep(0.1)
+    time.sleep(TIMESLP)
 
 
 def submit(driver):
     driver.find_element_by_xpath('//button/span[contains(text(),"保存")]').click()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located(
             (By.XPATH, '(//button/span[contains(text(),"提交")])[3]')))
     driver.find_element_by_xpath(
         '(//button/span[contains(text(),"提交")])[3]').click()
-    time.sleep(0.1)
+    time.sleep(TIMESLP)
 
 
 def fill_out(driver, campus, reason, destination, track):
@@ -227,14 +226,14 @@ def fill_in(driver, campus, reason, habitation, district, street):
 def screen_capture(driver, path):
     driver.back()
     driver.back()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
     driver.find_elements_by_class_name('el-card__body')[1].click()
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, TIMEOUT).until(
         EC.visibility_of_element_located(
             (By.XPATH, '//button/span[contains(text(),"加载更多")]')))
     driver.maximize_window()
-    time.sleep(0.1)
+    time.sleep(TIMESLP)
     driver.save_screenshot(path + 'result.png')
     print('备案历史截图已保存')
 
