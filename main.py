@@ -76,7 +76,7 @@ def go_to_application_out(driver):
         EC.visibility_of_element_located((By.CLASS_NAME, 'el-select')))
 
 
-def go_to_application_in(driver, userName, password):
+def go_to_application_in(driver, username, password):
     driver.back()
     driver.back()
     try:
@@ -88,7 +88,7 @@ def go_to_application_in(driver, userName, password):
             EC.visibility_of_element_located((By.CLASS_NAME, 'el-select')))
     except:
         print('检测到会话失效，重新登陆中...')
-        login(driver, userName, password)
+        login(driver, username, password)
         go_to_simso(driver)
         driver.find_element_by_class_name('el-card__body').click()
         WebDriverWait(driver, TIMEOUT).until(
@@ -238,10 +238,10 @@ def screen_capture(driver, path):
     print('备案历史截图已保存')
 
 
-def wechat_notification(userName, sckey):
+def wechat_notification(username, sckey):
     with request.urlopen(
             quote('https://sc.ftqq.com/' + sckey + '.send?text=成功报备&desp=学号' +
-                  str(userName) + '成功报备',
+                  str(username) + '成功报备',
                   safe='/:?=&')) as response:
         response = json.loads(response.read().decode('utf-8'))
     if response['errmsg'] == 'success':
@@ -250,16 +250,16 @@ def wechat_notification(userName, sckey):
         print(str(response['errno']) + ' error: ' + response['errmsg'])
 
 
-def run(driver, userName, password, campus, reason, destination, track,
+def run(driver, username, password, campus, reason, destination, track,
         habitation, district, street, sckey):
-    login(driver, userName, password)
+    login(driver, username, password)
     print('=================================')
 
     go_to_application_out(driver)
     fill_out(driver, campus, reason, destination, track)
     print('=================================')
 
-    go_to_application_in(driver, userName, password)
+    go_to_application_in(driver, username, password)
     fill_in(driver, campus, reason, habitation, district, street)
     print('=================================')
 
