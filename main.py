@@ -15,226 +15,178 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 #from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium import webdriver
+from urllib.parse import quote
+from urllib import request
+import time
+import warnings
+import json
+warnings.filterwarnings('ignore')
 
-TIMEOUT = 20
-TIMESLP = 3
 
-
-def login(driver, username, password, failed=0):
-    if failed == 3:
+def login(driver, userName, password, retry=0):
+    if retry == 3:
         raise Exception('门户登录失败')
 
+    print('门户登陆中...')
+
+    appID = 'portal2017'
     iaaaUrl = 'https://iaaa.pku.edu.cn/iaaa/oauth.jsp'
     appName = quote('北京大学校内信息门户新版')
     redirectUrl = 'https://portal.pku.edu.cn/portal2017/ssoLogin.do'
+
     driver.get('https://portal.pku.edu.cn/portal2017/')
     driver.get(
-        f'{iaaaUrl}?appID=portal2017&appName={appName}&redirectUrl={redirectUrl}'
-    )
-
-    print('门户登陆中...')
-    driver.find_element_by_id('user_name').send_keys(username)
-    time.sleep(TIMESLP)
+        f'{iaaaUrl}?appID={appID}&appName={appName}&redirectUrl={redirectUrl}')
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located((By.ID, 'logon_button')))
+    driver.find_element_by_id('user_name').send_keys(userName)
+    time.sleep(0.1)
     driver.find_element_by_id('password').send_keys(password)
-    time.sleep(TIMESLP)
+    time.sleep(0.1)
     driver.find_element_by_id('logon_button').click()
-
     try:
-        WebDriverWait(driver, TIMEOUT).until(
-            EC.visibility_of_element_located((By.LINK_TEXT, '我知道了')))
-    except:
-        pass
-    else:
-        driver.find_element_by_link_text('我知道了').click()
-
-    try:
-        WebDriverWait(driver, TIMEOUT).until(
-            EC.visibility_of_element_located((By.ID, 'all')))
-    except:
-        login(driver, username, password, failed + 1)
-    else:
+        WebDriverWait(driver,
+                      5).until(EC.visibility_of_element_located((By.ID, 'all')))
         print('门户登录成功！')
+    except:
+        print('Retrying...')
+        login(driver, userName, password, retry + 1)
+
+
+def go_to_simso(driver):
+    driver.find_element_by_id('all').click()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located((By.ID, 'tag_s_stuCampusExEnReq')))
+    driver.find_element_by_id('tag_s_stuCampusExEnReq').click()
+    time.sleep(1)
+    driver.switch_to.window(driver.window_handles[-1])
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
 
 
 def go_to_application_out(driver):
-    driver.find_element_by_id('all').click()
-    WebDriverWait(driver, TIMEOUT).until(
-        EC.visibility_of_element_located((By.ID, 'tag_s_stuCampusExEnReq')))
-    driver.find_element_by_id('tag_s_stuCampusExEnReq').click()
-    time.sleep(TIMESLP)
-    driver.switch_to.window(driver.window_handles[-1])
-    WebDriverWait(driver, TIMEOUT).until(
-        EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
-    time.sleep(TIMESLP)
+    go_to_simso(driver)
     driver.find_element_by_class_name('el-card__body').click()
-    time.sleep(TIMESLP)
-    WebDriverWait(driver, TIMEOUT).until(
-        EC.visibility_of_element_located((By.CLASS_NAME, 'el-input__inner')))
-
-
-def go_to_application_in(driver):
-    driver.get('https://portal.pku.edu.cn/portal2017/#/bizCenter')
-    WebDriverWait(driver, TIMEOUT).until(
-        EC.visibility_of_element_located((By.ID, 'all')))
-    driver.find_element_by_id('all').click()
-    WebDriverWait(driver, TIMEOUT).until(
-        EC.visibility_of_element_located((By.ID, 'tag_s_stuCampusExEnReq')))
-    driver.find_element_by_id('tag_s_stuCampusExEnReq').click()
-    time.sleep(TIMESLP)
-    driver.switch_to.window(driver.window_handles[-1])
-    WebDriverWait(driver, TIMEOUT).until(
-        EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
-    time.sleep(TIMESLP)
-    driver.find_element_by_class_name('el-card__body').click()
-    time.sleep(TIMESLP)
-    WebDriverWait(driver, TIMEOUT).until(
+    WebDriverWait(driver, 5).until(
         EC.visibility_of_element_located((By.CLASS_NAME, 'el-select')))
 
 
-def select_in_start(driver, way):
+def go_to_application_in(driver, userName, password):
+    driver.back()
+    driver.back()
+    try:
+        WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
+        time.sleep(0.5)
+        driver.find_element_by_class_name('el-card__body').click()
+        WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located((By.CLASS_NAME, 'el-select')))
+    except:
+        print('检测到会话失效，重新登陆中...')
+        login(driver, userName, password)
+        go_to_simso(driver)
+        driver.find_element_by_class_name('el-card__body').click()
+        WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located((By.CLASS_NAME, 'el-select')))
+
+
+def select_in_out(driver, way):
     driver.find_element_by_class_name('el-select').click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[2]/div[1]/div[1]/ul/li/span[text()="{way}"]').click()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located(
+            (By.XPATH, f'//li/span[text()="{way}"]')))
+    driver.find_element_by_xpath(f'//li/span[text()="{way}"]').click()
 
 
-def select_in_end(driver, campus):
+def select_campus(driver, campus):
     driver.find_elements_by_class_name('el-select')[1].click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[3]/div[1]/div[1]/ul/li/span[text()="{campus}"]').click()
-
-
-def select_in_gate(driver, gate):
-    driver.find_elements_by_class_name('el-select')[2].click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[4]/div[1]/div[1]/ul/ul[1]/li[2]/ul/li/span[text()="{gate}"]').click()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located(
+            (By.XPATH, f'//li/span[text()="{campus}"]')))
+    driver.find_element_by_xpath(f'//li/span[text()="{campus}"]').click()
 
 
 def select_destination(driver, destination):
+    driver.find_elements_by_class_name('el-select')[2].click()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located(
+            (By.XPATH, f'//li/span[text()="{destination}"]')))
+    driver.find_element_by_xpath(f'//li/span[text()="{destination}"]').click()
+
+
+def select_district(driver, district):
     driver.find_elements_by_class_name('el-select')[3].click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[5]/div[1]/div[1]/ul/li/span[text()="{destination}"]').click()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located(
+            (By.XPATH, f'//li/span[text()="{district}"]')))
+    driver.find_element_by_xpath(f'//li/span[text()="{district}"]').click()
 
 
 def write_reason(driver, reason):
     driver.find_element_by_class_name('el-textarea__inner').send_keys(
         f'{reason}')
-    time.sleep(TIMESLP)
-
-
-def select_location(driver, loc):
-    driver.find_elements_by_class_name('el-select')[3].click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[5]/div[1]/div[1]/ul/li/span[text()="中国"]').click()
-
-    driver.find_elements_by_class_name('el-select')[4].click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[6]/div[1]/div[1]/ul/li/span[text()="北京市"]').click()
-
-    driver.find_elements_by_class_name('el-select')[5].click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[7]/div[1]/div[1]/ul/li/span[text()="市辖区"]').click()
-
-    driver.find_elements_by_class_name('el-select')[6].click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[8]/div[1]/div[1]/ul/li/span[text()="海淀区"]').click()
-
-
-def write_street(driver, street):
-    driver.find_elements_by_class_name('el-input__inner')[8].send_keys(
-        f'{street}')
-    time.sleep(TIMESLP)
+    time.sleep(0.1)
 
 
 def write_track(driver, track):
     driver.find_elements_by_class_name('el-textarea__inner')[1].send_keys(
         f'{track}')
-    time.sleep(TIMESLP)
+    time.sleep(0.1)
 
 
-def select_apartment(driver, apartment):
-    driver.find_elements_by_class_name('el-select')[7].click()
-    time.sleep(TIMESLP)
-    driver.find_element_by_xpath(
-        f'/html/body/div[9]/div[1]/div[1]/ul/li/span[text()="万柳园区"]').click()
-
-    driver.find_elements_by_class_name('el-input__inner')[12].clear()
-    driver.find_elements_by_class_name('el-input__inner')[12].send_keys(
-        '1区')
-
-    time.sleep(TIMESLP)
-
-    driver.find_elements_by_class_name('el-input__inner')[13].clear()
-    driver.find_elements_by_class_name('el-input__inner')[13].send_keys(
-        '204c')
-    time.sleep(TIMESLP)
+def write_street(driver, street):
+    driver.find_elements_by_class_name('el-textarea__inner')[1].send_keys(
+        f'{street}')
+    time.sleep(0.1)
 
 
 def click_check(driver):
     driver.find_element_by_class_name('el-checkbox__label').click()
-    time.sleep(TIMESLP)
+    time.sleep(0.1)
 
 
 def click_inPeking(driver):
     driver.find_element_by_class_name('el-radio__inner').click()
-    time.sleep(TIMESLP)
+    time.sleep(0.1)
 
 
 def submit(driver):
-    driver.find_element_by_xpath(
-        '//button/span[contains(text(),"保存")]').click()
-    WebDriverWait(driver, TIMEOUT).until(
+    driver.find_element_by_xpath('//button/span[contains(text(),"保存")]').click()
+    WebDriverWait(driver, 5).until(
         EC.visibility_of_element_located(
             (By.XPATH, '(//button/span[contains(text(),"提交")])[3]')))
     driver.find_element_by_xpath(
         '(//button/span[contains(text(),"提交")])[3]').click()
-    time.sleep(TIMESLP)
+    time.sleep(0.1)
 
 
-def fill_out(driver, from_loc, end_loc, gate, destination, reason, track):
+def fill_out(driver, campus, reason, destination, track):
     print('开始填报出校备案')
 
-    print('选择出入校起点', end='')
-    select_in_start(driver, from_loc)
+    print('选择出校/入校    ', end='')
+    select_in_out(driver, '出校')
     print('Done')
 
-    print('选择出入校终点', end='')
-    select_in_end(driver, end_loc)
+    print('选择校区    ', end='')
+    select_campus(driver, campus)
     print('Done')
 
-    print('选择出入校校门', end='')
-    select_in_gate(driver, gate)
-    print('Done')
-
-    print('选择出入校事由', end='')
-    select_destination(driver, destination)
-    print('Done')
-
-    print('填写出入校具体事项', end='')
+    print('填写出入校事由    ', end='')
     write_reason(driver, reason)
     print('Done')
 
-    # print('选择出校目的地', end='')
-    # select_location(driver, '')
-    # print('Done')
-
-    # print('填写出校街道', end='')
-    # write_street(driver, street)
-    # print('Done')
-
-    print('填写出校轨迹', end='')
-    write_track(driver, track)
+    print('选择出校目的地    ', end='')
+    select_destination(driver, destination)
     print('Done')
 
-    print('填写宿舍', end='')
-    #select_apartment(driver, '')
+    print('填写出校行动轨迹    ', end='')
+    write_track(driver, track)
     print('Done')
 
     click_check(driver)
@@ -272,6 +224,21 @@ def fill_in(driver, campus, reason, habitation, district, street):
     print('入校备案填报完毕！')
 
 
+def screen_capture(driver, path):
+    driver.back()
+    driver.back()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located((By.CLASS_NAME, 'el-card__body')))
+    driver.find_elements_by_class_name('el-card__body')[1].click()
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located(
+            (By.XPATH, '//button/span[contains(text(),"加载更多")]')))
+    driver.maximize_window()
+    time.sleep(0.1)
+    driver.save_screenshot(path + 'result.png')
+    print('备案历史截图已保存')
+
+
 def wechat_notification(userName, sckey):
     with request.urlopen(
             quote('https://sc.ftqq.com/' + sckey + '.send?text=成功报备&desp=学号' +
@@ -284,23 +251,22 @@ def wechat_notification(userName, sckey):
         print(str(response['errno']) + ' error: ' + response['errmsg'])
 
 
-def run(driver, username, password, from_loc, end_loc, gate, destination, reason, track, sckey):
-
-    login(driver, username, password)
+def run(driver, userName, password, campus, reason, destination, track,
+        habitation, district, street, sckey):
+    login(driver, userName, password)
     print('=================================')
 
     go_to_application_out(driver)
-    fill_out(driver, from_loc, end_loc, gate, destination, reason, track)
+    fill_out(driver, campus, reason, destination, track)
     print('=================================')
 
-    # go_to_application_in(driver)
-    #fill_in(driver, campus, reason, habitation, district, street)
-
+    go_to_application_in(driver, userName, password)
+    fill_in(driver, campus, reason, habitation, district, street)
     print('=================================')
 
     if sckey != '0':
         wechat_notification(username, sckey)
-    print('=================================')
+        print('=================================')
 
     print('可以愉快的玩耍啦！')
 
@@ -342,8 +308,10 @@ if __name__ == '__main__':
     else:  # windows
         phantomjs_path = os.path.join('phantomjs', 'phantomjs-windows.exe')
 
-    driver = PhantomJS(executable_path=phantomjs_path)
-    run(driver, args.username, args.password, '万柳园区', '燕园',
-        '东南门', '学业', '校园上课 自习 科研', '万柳-燕园-万柳', args.sckey)
+    driver = PhantomJS(executable_path=phantomjs_path,service_args=['--ignore-ssl-errors=true','--ssl-protocol=TLSv1'])
 
-    driver.close()
+    run(driver, args.username, args.password, args.campus, args.reason, args.destination, args.track,
+        args.habitation, args.district, args.street, args.sckey)
+    
+    driver.quit()
+    
